@@ -17,6 +17,8 @@ import Utility.Vector2i;
 
 public class Main extends Canvas implements MouseListener, MouseMotionListener, MouseWheelListener //Basically, 'extends Canvas' just makes any Main object a painting canvas, that is, we can draw on it
 {
+	private static final long serialVersionUID = 1L;
+	
 	private static final int WIDTH = 800, HEIGHT = 600;
 	private static final int RENDER_WIDTH = 800, RENDER_HEIGHT = 600;
 	
@@ -24,7 +26,7 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 	private Space space;
 	private JFrame frame;
 	
-	private int ppu = 10;
+	private final int DEFAULT_PPU = 50;
 	
 	private ACTION action = ACTION.IDLE;
 	
@@ -40,6 +42,7 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		//This isn't that important, so ignore this
 		game.addMouseListener(game);
 		game.addMouseMotionListener(game);
+		game.addMouseWheelListener(game);
 		try
 		{
 			game.init(); //Goes to init() function inside 'game' object
@@ -53,7 +56,7 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 	public void init() throws InterruptedException //Thread.sleep() throws an InterruptedException, so we have to make the function do so too, or surround Thread.sleep() with try catch. Again, ignore this
 	{
 		cam = new Camera();
-		cam.calibrate(WIDTH, HEIGHT, ppu);
+		cam.calibrate(WIDTH, HEIGHT, DEFAULT_PPU);
 		space = new Space();
 		frame = new JFrame(); //Creates a window
 		frame.setSize(new Dimension(WIDTH, HEIGHT)); //Sets window's size
@@ -102,6 +105,7 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		bg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); //Turn anti-aliasing on
 		bg.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE); //Just makes the graphics more accurate
 		
+		cam.renderGrid(bg);
 		cam.render(space, bg);
 		
 		//Draws bufferImg on our original canvas
@@ -122,19 +126,24 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 			comp = new Line();
 			comp.startAt(cam.getAbsoluteLocation(getPixelRelativeTo(e)));
 			action = ACTION.DRAWING;
-			space.add(comp);
+			space.push(comp);
 		}
 		else if (e.getButton() == MouseEvent.BUTTON3)
 		{
 			action = ACTION.MOVING;
 		}
 		prevMouseE = e;
-		//repaint();
 	}
 	
 	@Override
 	public void mouseReleased(MouseEvent e)
 	{
+		if (action == ACTION.DRAWING)
+		{
+			if (comp.isInvalid()) //If component that user has drawn is not valid (Eg. if line's start pos and end pos is same), remove that element
+				space.pop();
+			comp = null;
+		}
 		action = ACTION.IDLE;
 		prevMouseE = e;
 	}
@@ -154,8 +163,6 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 	@Override
 	public void mouseDragged(MouseEvent e)
 	{
-		//if (line != null)
-		//line.end = new Vector2i(e.getX(), e.getY());
 		switch (action)
 		{
 			case DRAWING:
@@ -181,7 +188,18 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e)
 	{
-		ppu += (double) e.getWheelRotation() / 10;
+		Vector2i origPos = cam.getAbsoluteLocation(getPixelRelativeTo(e));
+		if (e.getWheelRotation() < 0)
+			cam.zoomIn();
+		else
+			cam.zoomOut();
+		cam.calibrate(WIDTH, HEIGHT, cam.getPPU());
+		
+		//We want the location of the coordinate the mouse was pointing to in space, to remain at the same location on screen even after zoom, to provide a good zooming exp for the user
+		Vector2i newPos = cam.getAbsoluteLocation(getPixelRelativeTo(e));
+		cam.setPos(cam.getPos().add(origPos.subtract(newPos)));
+		
+		repaint();
 	}
 	
 	//Returns Vector2i of coords of pixel relative to centre of screen, IN CARTESIAN COORDS
@@ -190,7 +208,7 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		return new Vector2i(x - WIDTH / 2, HEIGHT / 2 - y);
 	}
 	
-	//Returns Vector2i of coords of pixel relative to centre of screen, IN CARTESIAN COORDS, if you pass the MouseEvent that generated the click at that pixel
+	//Returns Vector2i of coords of pixel relative to centre of screen, IN CARTESIAN COORDS, if you pass the MouseEvent that generated the click on that pixel
 	private Vector2i getPixelRelativeTo(MouseEvent e)
 	{
 		return getPixelRelativeTo(e.getX(), e.getY());

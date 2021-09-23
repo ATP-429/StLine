@@ -1,3 +1,4 @@
+import java.awt.Color;
 import java.awt.Graphics2D;
 
 import Utility.Vector2i;
@@ -72,5 +73,44 @@ public class Camera
 		{
 			comp.render(bg, this);
 		}
+		
+		bg.translate(pos.x * ppu, pos.y * ppu);
+	}
+	
+	public void renderGrid(Graphics2D bg)
+	{
+		bg.translate(-pos.x * ppu, -pos.y * ppu);
+		
+		//Coordinates of bounding lines of camera (Camera is basically a square with 'pos' being centre of that square)
+		double xLeft = this.getPos().x - this.getUnitsOnScreen();
+		double xRight = this.getPos().x + this.getUnitsOnScreen();
+		double yUp = this.getPos().y + this.getUnitsOnScreen();
+		double yDown = this.getPos().y - this.getUnitsOnScreen();
+		
+		for (double x = (int) xLeft; x < xRight; x++)
+		{
+			bg.setColor(new Color(0xFFAAAAAA));
+			bg.drawLine((int) (x * this.getPPU()), (int) (yDown * this.getPPU()), (int) (x * this.getPPU()), (int) (yUp * this.getPPU()));
+		}
+		
+		for (double y = (int) yDown; y < yUp; y++)
+		{
+			bg.setColor(new Color(0xFFAAAAAA));
+			bg.drawLine((int) (xLeft * this.getPPU()), (int) (y * this.getPPU()), (int) (xRight * this.getPPU()), (int) (y * this.getPPU()));
+		}
+		
+		bg.translate(pos.x * ppu, pos.y * ppu);
+	}
+	
+	public void zoomIn()
+	{
+		if (ppu < 100)
+			ppu += 5;
+	}
+	
+	public void zoomOut()
+	{
+		if (ppu > 8)
+			ppu -= 5;
 	}
 }

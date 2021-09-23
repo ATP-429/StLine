@@ -6,6 +6,7 @@ import Utility.Vector2i;
 public class Line implements Component
 {
 	Vector2i start, end;
+	int col;
 	
 	@Override
 	public void render(Graphics2D bg, Camera cam)
@@ -16,16 +17,24 @@ public class Line implements Component
 		double yUp = cam.getPos().y + cam.getUnitsOnScreen();
 		double yDown = cam.getPos().y - cam.getUnitsOnScreen();
 		
-		/* Calculates yLeft and yRight using y = mx + c formula
-		 * First it finds slope and c by using the two points of the line. [If y-y0 = m(x-x0), then y = mx + (y0-mx0) => c = y0 - mx0]
-		 * Then it finds yLeft and yRight by plugging in xLeft and xRight into y = mx + c
-		 */
-		double slope = (end.y - start.y) / (end.x - start.x);
-		double c = start.y - slope * start.x;
-		double yLeft = xLeft * slope + c;
-		double yRight = xRight * slope + c;
-		bg.setColor(Color.RED);
-		bg.drawLine((int) (xLeft * cam.getPPU()), (int) (yLeft * cam.getPPU()), (int) (xRight * cam.getPPU()), (int) (yRight * cam.getPPU()));
+		if (start.x != end.x)
+		{
+			/* Calculates yLeft and yRight using y = mx + c formula
+			 * First it finds slope and c by using the two points of the line. [If y-y0 = m(x-x0), then y = mx + (y0-mx0) => c = y0 - mx0]
+			 * Then it finds yLeft and yRight by plugging in xLeft and xRight into y = mx + c
+			 */
+			double slope = (end.y - start.y) / (end.x - start.x);
+			double c = start.y - slope * start.x;
+			double yLeft = xLeft * slope + c;
+			double yRight = xRight * slope + c;
+			bg.setColor(new Color(col));
+			bg.drawLine((int) (xLeft * cam.getPPU()), (int) (yLeft * cam.getPPU()), (int) (xRight * cam.getPPU()), (int) (yRight * cam.getPPU()));
+		}
+		else
+		{
+			bg.setColor(new Color(col));
+			bg.drawLine((int) (start.x * cam.getPPU()), (int) (yDown * cam.getPPU()), (int) (start.x * cam.getPPU()), (int) (yUp * cam.getPPU()));
+		}
 	}
 	
 	@Override
@@ -38,5 +47,15 @@ public class Line implements Component
 	public void endAt(Vector2i end)
 	{
 		this.end = end;
+	}
+	
+	@Override
+	public boolean isInvalid()
+	{
+		if (start == null || end == null)
+			return true;
+		if (start.equals(end))
+			return true;
+		return false;
 	}
 }
