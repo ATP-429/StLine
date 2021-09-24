@@ -1,3 +1,4 @@
+import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -11,6 +12,7 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.image.BufferedImage;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
 
 import Utility.Vector2i;
@@ -33,6 +35,8 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 	private Component comp;
 	
 	private MouseEvent prevMouseE;
+	
+	private Menu menu;
 	
 	//Entry-point of program
 	public static void main(String[] args)
@@ -65,6 +69,12 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		
 		//Adds 'this' object to the frame. 'this' refers to the object that is executing this function, that is, the 'game' object we declared above in main(). 
 		frame.add(this); //Basically, it's adding the 'game' object (Which is just a canvas) to the window, so anything we draw on the canvas will now be visible on the frame
+		
+		menu = new Menu();
+		menu.setPreferredSize(new Dimension(WIDTH / 3, HEIGHT));
+		frame.add(menu, BorderLayout.LINE_END);
+		menu.add(new JButton("Test"));
+		menu.setVisible(true);
 		
 		//setLocationRelativeTo just sets the window's position on the screen with respect to another component 
 		frame.setLocationRelativeTo(null); //If the argument is 'null', it just puts the window at the centre of the screen
