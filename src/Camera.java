@@ -9,6 +9,8 @@ public class Camera
 	private double unitsOnScreen; //Number of units between centre of cam and any one edge of the bounding square of this camera
 	private double ppu; //pixelsPerUnit, that is, size of one unit square in terms of pixels on screen
 	
+	private double snapPixelRadius = 10;
+	
 	public Camera()
 	{
 		
@@ -66,20 +68,20 @@ public class Camera
 	
 	public void render(Space space, Graphics2D bg)
 	{
-		//Sets centre of our drawing screen to centre of camera
-		bg.translate(-pos.x * ppu, -pos.y * ppu);
+		translate(bg);
 		
 		for (Component comp : space.getComps())
 		{
-			comp.render(bg, this);
+			if (!comp.isInvalid())
+				comp.render(bg, this);
 		}
 		
-		bg.translate(pos.x * ppu, pos.y * ppu);
+		reset(bg);
 	}
 	
 	public void renderGrid(Graphics2D bg)
 	{
-		bg.translate(-pos.x * ppu, -pos.y * ppu);
+		translate(bg);
 		
 		//Coordinates of bounding lines of camera (Camera is basically a square with 'pos' being centre of that square)
 		double xLeft = this.getPos().x - this.getUnitsOnScreen();
@@ -99,7 +101,18 @@ public class Camera
 			bg.drawLine((int) (xLeft * this.getPPU()), (int) (y * this.getPPU()), (int) (xRight * this.getPPU()), (int) (y * this.getPPU()));
 		}
 		
-		bg.translate(pos.x * ppu, pos.y * ppu);
+		reset(bg);
+	}
+	
+	public void renderSnap(Vector2i snap, Graphics2D bg)
+	{
+		translate(bg);
+		
+		//Draws green circle around point to which mouse must be snapped to
+		bg.setColor(new Color(0xFF00AA00));
+		bg.fillOval((int) (snap.x * this.getPPU() - snapPixelRadius / 2), (int) (snap.y * this.getPPU() - snapPixelRadius / 2), (int) snapPixelRadius, (int) snapPixelRadius);
+		
+		reset(bg);
 	}
 	
 	public void zoomIn()
@@ -112,5 +125,17 @@ public class Camera
 	{
 		if (ppu > 8)
 			ppu -= 5;
+	}
+	
+	//Sets centre of our drawing screen to centre of camera
+	public void translate(Graphics2D bg)
+	{
+		bg.translate(-pos.x * ppu, -pos.y * ppu);
+	}
+	
+	//Resets drawing coords back to normal
+	public void reset(Graphics2D bg)
+	{
+		bg.translate(pos.x * ppu, pos.y * ppu);
 	}
 }
