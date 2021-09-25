@@ -48,6 +48,7 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		game.addMouseMotionListener(game);
 		game.addMouseWheelListener(game);
 		game.addKeyListener(game);
+		game.setPreferredSize(new Dimension(WIDTH, HEIGHT));
 		try
 		{
 			game.init();
@@ -64,12 +65,13 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		cam.calibrate(WIDTH, HEIGHT, DEFAULT_PPU);
 		space = new Space();
 		frame = new JFrame(); //Creates a window
-		frame.setSize(new Dimension(WIDTH, HEIGHT)); //Sets window's size
 		frame.setResizable(false); //Now window cannot be resized by moving its borders
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		//Adds 'this' object to the frame. 'this' refers to the object that is executing this function, that is, the 'game' object we declared above in main(). 
 		frame.add(this); //Basically, it's adding the 'game' object (Which is just a canvas) to the window, so anything we draw on the canvas will now be visible on the frame
+		
+		frame.pack(); //Resizes the window so that all components inside it are at or above their preferred size. Since the preferred size of canvas is WIDTH x HEIGHT (As defined in main() function), the client area gets a size of WIDTH x HEIGHT
 		
 		//setLocationRelativeTo just sets the window's position on the screen with respect to another component 
 		frame.setLocationRelativeTo(null); //If the argument is 'null', it just puts the window at the centre of the screen

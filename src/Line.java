@@ -12,10 +12,8 @@ public class Line implements Component
 	public void render(Graphics2D bg, Camera cam)
 	{
 		//Coordinates of bounding lines of camera (Camera is basically a square with 'pos' being centre of that square)
-		double xLeft = cam.getPos().x - cam.getUnitsOnScreen();
-		double xRight = cam.getPos().x + cam.getUnitsOnScreen();
-		double yUp = cam.getPos().y + cam.getUnitsOnScreen();
-		double yDown = cam.getPos().y - cam.getUnitsOnScreen();
+		double[] bounds = cam.getBounds();
+		double xLeft = bounds[0], yUp = bounds[1], xRight = bounds[2], yDown = bounds[3];
 		
 		if (start.x != end.x)
 		{
@@ -28,41 +26,12 @@ public class Line implements Component
 			double yLeft = xLeft * slope + c;
 			double yRight = xRight * slope + c;
 			bg.setColor(new Color(col));
-			bg.drawLine((int) (xLeft * cam.getPPU()), (int) (yLeft * cam.getPPU()), (int) (xRight * cam.getPPU()), (int) (yRight * cam.getPPU()));
+			cam.drawLine(bg, xLeft, yLeft, xRight, yRight);
 		}
 		else
 		{
 			bg.setColor(new Color(col));
-			bg.drawLine((int) (start.x * cam.getPPU()), (int) (yDown * cam.getPPU()), (int) (start.x * cam.getPPU()), (int) (yUp * cam.getPPU()));
-		}
-	}
-	
-	public void renderSelection(Graphics2D bg, Camera cam)
-	{
-		//Coordinates of bounding lines of camera (Camera is basically a square with 'pos' being centre of that square)
-		double xLeft = cam.getPos().x - cam.getUnitsOnScreen();
-		double xRight = cam.getPos().x + cam.getUnitsOnScreen();
-		double yUp = cam.getPos().y + cam.getUnitsOnScreen();
-		double yDown = cam.getPos().y - cam.getUnitsOnScreen();
-		
-		if (start.x != end.x)
-		{
-			/* Calculates yLeft and yRight using y = mx + c formula
-			 * First it finds slope and c by using the two points of the line. [If y-y0 = m(x-x0), then y = mx + (y0-mx0) => c = y0 - mx0]
-			 * Then it finds yLeft and yRight by plugging in xLeft and xRight into y = mx + c
-			 */
-			double slope = (end.y - start.y) / (end.x - start.x);
-			double c = start.y - slope * start.x;
-			double yLeft = xLeft * slope + c;
-			double yRight = xRight * slope + c;
-			bg.setColor(Color.BLACK);
-			bg.drawLine((int) (xLeft * cam.getPPU() + 1), (int) (yLeft * cam.getPPU()), (int) (xRight * cam.getPPU() + 1), (int) (yRight * cam.getPPU()));
-			bg.drawLine((int) (xLeft * cam.getPPU() - 1), (int) (yLeft * cam.getPPU()), (int) (xRight * cam.getPPU() - 1), (int) (yRight * cam.getPPU()));
-		}
-		else
-		{
-			bg.setColor(new Color(col));
-			bg.drawLine((int) (start.x * cam.getPPU()), (int) (yDown * cam.getPPU()), (int) (start.x * cam.getPPU()), (int) (yUp * cam.getPPU()));
+			cam.drawLine(bg, start.x, yDown, start.x, yUp);
 		}
 	}
 	
