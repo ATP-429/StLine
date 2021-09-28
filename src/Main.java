@@ -5,6 +5,8 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -17,18 +19,20 @@ import javax.swing.JFrame;
 
 import Utility.Vector2i;
 
-public class Main extends Canvas implements MouseListener, MouseMotionListener, MouseWheelListener //Basically, 'extends Canvas' just makes any Main object a painting canvas, that is, we can draw on it
+public class Main extends Canvas implements MouseListener, MouseMotionListener, MouseWheelListener, KeyListener //Basically, 'extends Canvas' just makes any Main object a painting canvas, that is, we can draw on it
 {
 	private static final long serialVersionUID = 1L;
 	
 	private static final int WIDTH = 800, HEIGHT = 600;
 	private static final int RENDER_WIDTH = 800, RENDER_HEIGHT = 600;
 	
+	private final int DEFAULT_PPU = 50;
+	
 	private Camera cam;
 	private Space space;
 	private JFrame frame;
 	
-	private final int DEFAULT_PPU = 50;
+	private volatile boolean[] keys = new boolean[200];
 	
 	private ACTION action = ACTION.IDLE;
 	
@@ -38,18 +42,20 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 	
 	private Menu menu;
 	
-	//Entry-point of program
+	private Vector2i prevSnap;
+	private Vector2i snap; //Coordinates of the point to which the mouse will snap to, in space
+	
 	public static void main(String[] args)
 	{
-		Main game = new Main(); //Making an object of Main class
-		//Thread.sleep() in init() function can throw an exception, so we need to catch it here to compile without errors.
-		//This isn't that important, so ignore this
+		Main game = new Main();
 		game.addMouseListener(game);
 		game.addMouseMotionListener(game);
 		game.addMouseWheelListener(game);
+		game.addKeyListener(game);
+		game.setPreferredSize(new Dimension(WIDTH, HEIGHT));
 		try
 		{
-			game.init(); //Goes to init() function inside 'game' object
+			game.init();
 		}
 		catch (InterruptedException e)
 		{
@@ -57,13 +63,12 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		}
 	}
 	
-	public void init() throws InterruptedException //Thread.sleep() throws an InterruptedException, so we have to make the function do so too, or surround Thread.sleep() with try catch. Again, ignore this
+	public void init() throws InterruptedException
 	{
 		cam = new Camera();
 		cam.calibrate(WIDTH, HEIGHT, DEFAULT_PPU);
 		space = new Space();
 		frame = new JFrame(); //Creates a window
-		frame.setSize(new Dimension(WIDTH, HEIGHT)); //Sets window's size
 		frame.setResizable(false); //Now window cannot be resized by moving its borders
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
@@ -75,11 +80,14 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		frame.add(menu, BorderLayout.LINE_END);
 		menu.add(new JButton("Test"));
 		menu.setVisible(true);
+		frame.pack(); //Resizes the window so that all components inside it are at or above their preferred size. Since the preferred size of canvas is WIDTH x HEIGHT (As defined in main() function), the client area gets a size of WIDTH x HEIGHT
 		
 		//setLocationRelativeTo just sets the window's position on the screen with respect to another component 
 		frame.setLocationRelativeTo(null); //If the argument is 'null', it just puts the window at the centre of the screen
 		
 		frame.setVisible(true); //Makes our frame visible
+		
+		this.requestFocusInWindow(); //We need to do this otherwise the canvas isn't able to listen to key events without us having to click on the canvas to give it focus first
 	}
 	
 	//We need to do this because when repaint() is called, the original update() method of Canvas class clears the screen before calling paint()
@@ -118,6 +126,9 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		cam.renderGrid(bg);
 		cam.render(space, bg);
 		
+		if (snap != null)
+			cam.renderSnap(snap, bg);
+		
 		//Draws bufferImg on our original canvas
 		g.drawImage(bufferImg, 0, 0, WIDTH, HEIGHT, null);
 	}
@@ -134,7 +145,11 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		if (e.getButton() == MouseEvent.BUTTON1)
 		{
 			comp = new Line();
-			comp.startAt(cam.getAbsoluteLocation(getPixelRelativeTo(e)));
+			//If user has not pressed shift key to override the snap, snap to required point
+			if (!keys[KeyEvent.VK_SHIFT])
+				comp.startAt(space.snapFrom(cam.getAbsoluteLocation(getPixelRelativeTo(e))));
+			else
+				comp.startAt(cam.getAbsoluteLocation(getPixelRelativeTo(e)));
 			action = ACTION.DRAWING;
 			space.push(comp);
 		}
@@ -176,15 +191,24 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		switch (action)
 		{
 			case DRAWING:
-				comp.endAt(cam.getAbsoluteLocation(getPixelRelativeTo(e)));
+				//If user has not pressed shift key to override the snap, snap to required point
+				if (!keys[KeyEvent.VK_SHIFT])
+					comp.endAt(space.snapFrom(cam.getAbsoluteLocation(getPixelRelativeTo(e))));
+				else
+					comp.endAt(cam.getAbsoluteLocation(getPixelRelativeTo(e)));
 				break;
 			
 			case MOVING:
+				//Get difference between the prevMouse coordinates and current mouse coords, in space, and then move camera's position by that difference.
+				//This makes it so that the mouse pointer remains at the same location in space, while the camera's position changes.
 				Vector2i prev = cam.getAbsoluteLocation(getPixelRelativeTo(prevMouseE));
 				Vector2i next = cam.getAbsoluteLocation(getPixelRelativeTo(e));
 				cam.setPos(cam.getPos().subtract(next.subtract(prev)));
 				break;
 		}
+		
+		updateSnap(e);
+		
 		prevMouseE = e;
 		repaint();
 	}
@@ -192,7 +216,35 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 	@Override
 	public void mouseMoved(MouseEvent e)
 	{
+		updateSnap(e);
+		prevMouseE = e;
+	}
+	
+	private void updateSnap(MouseEvent e)
+	{
+		Vector2i point = cam.getAbsoluteLocation(getPixelRelativeTo(e));
+		Vector2i snap = space.snapFrom(point);
+		if (!snap.equals(point) && !keys[KeyEvent.VK_SHIFT])
+			this.snap = snap;
+		else
+			this.snap = null;
 		
+		if (change(this.snap, prevSnap))
+			repaint();
+		
+		prevSnap = this.snap;
+	}
+	
+	private boolean change(Vector2i snap, Vector2i prevSnap)
+	{
+		//Basically, if snap is different from prevSnap, repaint() the screen. We need to check all these null values because it gives an error otherwise
+		if ((snap == null && prevSnap != null) || (snap != null && prevSnap == null))
+			return true;
+		else if (snap == null && prevSnap == null)
+			return false;
+		else if (!snap.equals(prevSnap))
+			return true;
+		return false;
 	}
 	
 	@Override
@@ -210,6 +262,26 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		cam.setPos(cam.getPos().add(origPos.subtract(newPos)));
 		
 		repaint();
+	}
+	
+	@Override
+	public void keyTyped(KeyEvent e)
+	{
+		
+	}
+	
+	@Override
+	public void keyPressed(KeyEvent e)
+	{
+		keys[e.getKeyCode()] = true;
+		if (e.getKeyCode() == KeyEvent.VK_SHIFT)
+			updateSnap(prevMouseE);
+	}
+	
+	@Override
+	public void keyReleased(KeyEvent e)
+	{
+		keys[e.getKeyCode()] = false;
 	}
 	
 	//Returns Vector2i of coords of pixel relative to centre of screen, IN CARTESIAN COORDS

@@ -6,16 +6,14 @@ import Utility.Vector2i;
 public class Line implements Component
 {
 	Vector2i start, end;
-	int col;
+	int col = 0xFFFF0000;
 	
 	@Override
 	public void render(Graphics2D bg, Camera cam)
 	{
 		//Coordinates of bounding lines of camera (Camera is basically a square with 'pos' being centre of that square)
-		double xLeft = cam.getPos().x - cam.getUnitsOnScreen();
-		double xRight = cam.getPos().x + cam.getUnitsOnScreen();
-		double yUp = cam.getPos().y + cam.getUnitsOnScreen();
-		double yDown = cam.getPos().y - cam.getUnitsOnScreen();
+		double[] bounds = cam.getBounds();
+		double xLeft = bounds[0], yUp = bounds[1], xRight = bounds[2], yDown = bounds[3];
 		
 		if (start.x != end.x)
 		{
@@ -28,12 +26,12 @@ public class Line implements Component
 			double yLeft = xLeft * slope + c;
 			double yRight = xRight * slope + c;
 			bg.setColor(new Color(col));
-			bg.drawLine((int) (xLeft * cam.getPPU()), (int) (yLeft * cam.getPPU()), (int) (xRight * cam.getPPU()), (int) (yRight * cam.getPPU()));
+			cam.drawLine(bg, xLeft, yLeft, xRight, yRight);
 		}
 		else
 		{
 			bg.setColor(new Color(col));
-			bg.drawLine((int) (start.x * cam.getPPU()), (int) (yDown * cam.getPPU()), (int) (start.x * cam.getPPU()), (int) (yUp * cam.getPPU()));
+			cam.drawLine(bg, start.x, yDown, start.x, yUp);
 		}
 	}
 	
