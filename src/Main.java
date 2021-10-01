@@ -62,7 +62,7 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 	public void init() throws InterruptedException
 	{
 		cam = new Camera();
-		cam.calibrate(WIDTH, HEIGHT, DEFAULT_PPU);
+		cam.calibrate(RENDER_WIDTH, RENDER_HEIGHT, DEFAULT_PPU);
 		space = new Space();
 		frame = new JFrame(); //Creates a window
 		frame.setResizable(false); //Now window cannot be resized by moving its borders
@@ -104,12 +104,12 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		Graphics2D bg = (Graphics2D) bufferImg.getGraphics();
 		
 		//Make the coordinate system match cartesian coordinate system
-		bg.translate(WIDTH / 2, HEIGHT / 2);
+		bg.translate(RENDER_WIDTH / 2, RENDER_HEIGHT / 2);
 		bg.scale(1.0, -1.0);
 		
 		//Set background to white
 		bg.setBackground(Color.WHITE);
-		bg.clearRect(-WIDTH / 2, -HEIGHT / 2, WIDTH, HEIGHT); //Since we've changed coordinate system, we need to now pass the bottom-left coord of rectangle
+		bg.clearRect(-RENDER_WIDTH / 2, -RENDER_HEIGHT / 2, RENDER_WIDTH, RENDER_HEIGHT); //Since we've changed coordinate system, we need to now pass the bottom-left coord of rectangle
 		
 		bg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); //Turn anti-aliasing on
 		bg.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE); //Just makes the graphics more accurate
@@ -246,7 +246,7 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 			cam.zoomIn();
 		else
 			cam.zoomOut();
-		cam.calibrate(WIDTH, HEIGHT, cam.getPPU());
+		cam.calibrate(RENDER_WIDTH, RENDER_HEIGHT, cam.getPPU());
 		
 		//We want the location of the coordinate the mouse was pointing to in space, to remain at the same location on screen even after zoom, to provide a good zooming exp for the user
 		Vector2i newPos = cam.getAbsoluteLocation(getPixelRelativeTo(e));
@@ -278,13 +278,21 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 	//Returns Vector2i of coords of pixel relative to centre of screen, IN CARTESIAN COORDS
 	private Vector2i getPixelRelativeTo(int x, int y)
 	{
-		return new Vector2i(x - WIDTH / 2, HEIGHT / 2 - y);
+		Vector2i pixel = getPixelInOrigScreen(x, y);
+		return new Vector2i(pixel.x - RENDER_WIDTH / 2, RENDER_HEIGHT / 2 - pixel.y);
 	}
 	
 	//Returns Vector2i of coords of pixel relative to centre of screen, IN CARTESIAN COORDS, if you pass the MouseEvent that generated the click on that pixel
 	private Vector2i getPixelRelativeTo(MouseEvent e)
 	{
 		return getPixelRelativeTo(e.getX(), e.getY());
+	}
+	
+	//Returns Vector2i of the coords that the pixel would be at, if screen resolution was RENDER_WIDTH x RENDER_HEIGHT
+	//Basically finds the ratio of x and y coords [Eg if WIDTH = 1000 and x = 500, then we just return RENDER_WIDTH*0.5]
+	private Vector2i getPixelInOrigScreen(int x, int y)
+	{
+		return new Vector2i((double) x / WIDTH * RENDER_WIDTH, (double) y / HEIGHT * RENDER_HEIGHT);
 	}
 }
 

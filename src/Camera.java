@@ -18,6 +18,11 @@ public class Camera
 	private double fontOffset = 0.1; //Offset of font from the axes IN SPACE DIMENSIONS
 	private double snapRadius = 0.4; //GRAPHICAL RADIUS of snap IN SPACE DIMENSIONS
 	
+	private double fontSize;
+	private Font font;
+	
+	double fontWidth;
+	
 	public Camera()
 	{
 		
@@ -28,6 +33,7 @@ public class Camera
 		this.setXUnitsOnScreen(xUnitsOnScreen);
 		this.setYUnitsOnScreen(yUnitsOnScreen);
 		this.ppu = ppu;
+		update();
 	}
 	
 	//Configures the camera so that it fills up the whole screen, if ppu is passed to it
@@ -36,6 +42,7 @@ public class Camera
 		this.ppu = ppu;
 		this.setXUnitsOnScreen((double) (WIDTH / 2) / ppu); //Calculates number of units btwn centre and 'higher' dimension. [pixels / pixels per unit = units]
 		this.setYUnitsOnScreen((double) (HEIGHT / 2) / ppu);
+		update();
 	}
 	
 	//Returns absolute coordinate of pixel in Space, if coordinate of a pixel is passed wrt centre of cam
@@ -128,104 +135,75 @@ public class Camera
 		
 		//DRAW GRID COORDS
 		//NOTE: We have to use bg.scale(1.0,-1.0) because otherwise string gets drawn upside down
-		double fontSize = 72.0 * fontHeight / Toolkit.getDefaultToolkit().getScreenResolution();
-		Font font = new Font("Consolas", Font.PLAIN, (int) (fontSize * this.getPPU()));
 		bg.setColor(new Color(0xFF000000));
 		bg.setFont(font);
-		
-		//Gets the width and height of the font IN SPACE UNITS
-		double width = font.getStringBounds("A", new FontRenderContext(new AffineTransform(), true, true)).getWidth() / this.getPPU();
-		double height = font.getStringBounds("A", new FontRenderContext(new AffineTransform(), true, true)).getHeight() / this.getPPU();
 		
 		//Draw grid coords of x-axis
 		if (0 < yUp) //If text is below the top of the screen
 		{
-			if (0 - fontHeight - 2 * fontOffset > yDown) //If text is above the bottom of the screen, that is, it is visible in the screen and should be drawn as such
-			{
-				for (int x = (int) xLeft; x < xRight; x++)
-				{
-					if (x != 0)
-					{
-						String str = "" + x;
-						bg.scale(1.0, -1.0);
-						drawString(bg, str, x - str.length() * width / 2, 0 + fontOffset + fontHeight); //Drawing string at y = 0 and with given offset
-						bg.scale(1.0, -1.0);
-					}
-				}
-			}
+			if (0 - fontHeight - fontOffset > yDown) //If text is above the bottom of the screen, that is, it is visible in the screen and should be drawn as such
+				renderHorCoords(0 - fontHeight, xLeft, xRight, bg);
 			else //If text is below the bottom of the screen
-			{
-				for (int x = (int) xLeft; x < xRight; x++)
-				{
-					if (x != 0)
-					{
-						String str = "" + x;
-						bg.scale(1.0, -1.0);
-						drawString(bg, str, x - str.length() * width / 2, -yDown - fontOffset); //Drawing string at yDown [Since we've scaled y-axis with -1, we need to do -yDown and -offset]
-						bg.scale(1.0, -1.0);
-					}
-				}
-			}
+				renderHorCoords(yDown + fontOffset, xLeft, xRight, bg);
 		}
 		else //If text is above the top of the screen
 		{
-			for (int x = (int) xLeft; x < xRight; x++)
-			{
-				if (x != 0)
-				{
-					String str = "" + x;
-					bg.scale(1.0, -1.0);
-					drawString(bg, str, x - str.length() * width / 2, -yUp + fontHeight + fontOffset);
-					bg.scale(1.0, -1.0);
-				}
-			}
+			renderHorCoords(yUp - fontHeight, xLeft, xRight, bg);
 		}
 		
 		//Draw grid coords of y-axis
-		if (0-width-fontOffset > xLeft) //If text is to the right of the left side of screen
+		if (0 - fontWidth - 2*fontOffset > xLeft) //If text is to the right of the left side of screen
 		{
 			if (0 < xRight) //If text is to the left of the right side of screen, that is, it is visible in the screen and should be drawn as such
-			{
-				for (int y = (int) yDown; y < yUp; y++)
-				{
-					if (y != 0)
-					{
-						String str = "" + y;
-						bg.scale(1.0, -1.0);
-						drawString(bg, str, 0 - width*str.length() - fontOffset, -y + fontOffset); //Drawing string at x = 0 and with given offset
-						bg.scale(1.0, -1.0);
-					}
-				}
-			}
+				renderVerCoordsToLeftOf(0 - fontOffset, yDown, yUp, bg);
 			else //If text is to the right of the right side of screen
-			{
-				for (int y = (int) yDown; y < yUp; y++)
-				{
-					if (y != 0)
-					{
-						String str = "" + y;
-						bg.scale(1.0, -1.0);
-						drawString(bg, str, xRight - width - fontOffset, -y + fontOffset);
-						bg.scale(1.0, -1.0);
-					}
-				}
-			}
+				renderVerCoordsToLeftOf(xRight - fontOffset, yDown, yUp, bg);
 		}
 		else //If text is to the left of the left side of screen
 		{
-			for (int y = (int) yDown; y < yUp; y++)
-			{
-				if (y != 0)
-				{
-					String str = "" + y;
-					bg.scale(1.0, -1.0);
-					drawString(bg, str, xLeft+fontOffset, -y + fontOffset);
-					bg.scale(1.0, -1.0);
-				}
-			}
+			renderVerCoordsToRightOf(xLeft+fontOffset, yDown, yUp, bg);
 		}
 		
 		reset(bg);
+	}
+	
+	//Renders horizontal coords given the y coordinate of the base line and the starting and ending coords
+	private void renderHorCoords(double yBase, double xLeft, double xRight, Graphics2D bg)
+	{
+		for (int x = (int) (xLeft - 1); x <= xRight + 1; x++)
+		{
+			if (x != 0)
+			{
+				String str = "" + x;
+				drawString(bg, str, x - str.length() * fontWidth / 2, yBase);
+			}
+		}
+	}
+	
+	//Renders vertical coords given the x coordinate of the rhs of the text and the starting and ending coords
+	private void renderVerCoordsToLeftOf(double xRight, double yDown, double yUp, Graphics2D bg)
+	{
+		for (int y = (int) (yDown - 1); y <= yUp + 1; y++)
+		{
+			if (y != 0)
+			{
+				String str = "" + y;
+				drawString(bg, str, xRight - str.length() * fontWidth, y);
+			}
+		}
+	}
+	
+	//Renders vertical coords given the x coordinate of the rhs of the text and the starting and ending coords
+	private void renderVerCoordsToRightOf(double xLeft, double yDown, double yUp, Graphics2D bg)
+	{
+		for (int y = (int) (yDown - 1); y <= yUp + 1; y++)
+		{
+			if (y != 0)
+			{
+				String str = "" + y;
+				drawString(bg, str, xLeft, y);
+			}
+		}
 	}
 	
 	public void renderSnap(Vector2i snap, Graphics2D bg)
@@ -244,12 +222,14 @@ public class Camera
 	{
 		if (ppu < 100)
 			ppu += 5;
+		update();
 	}
 	
 	public void zoomOut()
 	{
 		if (ppu > 8)
 			ppu -= 5;
+		update();
 	}
 	
 	//Sets centre of our drawing screen to centre of camera
@@ -304,5 +284,17 @@ public class Camera
 	public void drawString(Graphics2D bg, String str, double x, double y)
 	{
 		bg.drawString(str, (int) (x * this.getPPU()), (int) (y * this.getPPU()));
+	}
+	
+	//Updates all the variables associated with the camera
+	public void update()
+	{
+		fontSize = 72.0 * fontHeight / Toolkit.getDefaultToolkit().getScreenResolution();
+		font = new Font("Consolas", Font.PLAIN, (int) (fontSize * this.getPPU()));
+		AffineTransform at = new AffineTransform();
+		at.scale(1.0, -1.0);
+		font = font.deriveFont(at);
+		//Gets the width of the font IN SPACE UNITS
+		fontWidth = font.getStringBounds("A", new FontRenderContext(new AffineTransform(), true, true)).getWidth() / this.getPPU();
 	}
 }
