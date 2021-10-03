@@ -14,8 +14,8 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.image.BufferedImage;
 
-import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JScrollPane;
 
 import Utility.Vector2i;
 
@@ -76,10 +76,15 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		frame.add(this); //Basically, it's adding the 'game' object (Which is just a canvas) to the window, so anything we draw on the canvas will now be visible on the frame
 		
 		menu = new Menu();
+		//menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
+		
 		menu.setPreferredSize(new Dimension(WIDTH / 3, HEIGHT));
-		frame.add(menu, BorderLayout.LINE_END);
-		menu.add(new JButton("Test"));
+		menu.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		menu.setVisible(true);
+		menu.getVerticalScrollBar().setUnitIncrement(16);
+		
+		frame.add(menu, BorderLayout.LINE_END);
+		
 		frame.pack(); //Resizes the window so that all components inside it are at or above their preferred size. Since the preferred size of canvas is WIDTH x HEIGHT (As defined in main() function), the client area gets a size of WIDTH x HEIGHT
 		
 		//setLocationRelativeTo just sets the window's position on the screen with respect to another component 
@@ -153,7 +158,7 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 			action = ACTION.DRAWING;
 			space.push(comp);
 		}
-		else if (e.getButton() == MouseEvent.BUTTON3)
+		else if (e.getButton() == MouseEvent.BUTTON3 || e.getButton() == MouseEvent.BUTTON2)
 		{
 			action = ACTION.MOVING;
 		}
@@ -167,6 +172,8 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		{
 			if (comp.isInvalid()) //If component that user has drawn is not valid (Eg. if line's start pos and end pos is same), remove that element
 				space.pop();
+			menu.add(comp);
+			menu.revalidate();
 			comp = null;
 		}
 		action = ACTION.IDLE;
@@ -276,6 +283,8 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		keys[e.getKeyCode()] = true;
 		if (e.getKeyCode() == KeyEvent.VK_SHIFT)
 			updateSnap(prevMouseE);
+		if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
+			frame.dispose();
 	}
 	
 	@Override

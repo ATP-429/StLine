@@ -1,5 +1,11 @@
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
+
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.border.Border;
 
 import Utility.Vector2i;
 
@@ -55,5 +61,13 @@ public class Line implements Component
 		if (start.equals(end))
 			return true;
 		return false;
+	}
+	
+	public JPanel getDetails()
+	{
+		JPanel details = new JPanel();
+		details.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+		details.add(new JLabel("Slope = " + (float) (end.y - start.y) / (end.x - start.x)));
+		return details;
 	}
 }
