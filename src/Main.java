@@ -144,7 +144,7 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 			action = ACTION.DRAWING;
 			space.push(comp);
 		}
-		else if (e.getButton() == MouseEvent.BUTTON3)
+		else if (e.getButton() == MouseEvent.BUTTON3 || e.getButton() == MouseEvent.BUTTON2)
 		{
 			action = ACTION.MOVING;
 		}
@@ -267,6 +267,8 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		keys[e.getKeyCode()] = true;
 		if (e.getKeyCode() == KeyEvent.VK_SHIFT)
 			updateSnap(prevMouseE);
+		if(e.getKeyCode() == KeyEvent.VK_ESCAPE)
+			frame.dispose();
 	}
 	
 	@Override

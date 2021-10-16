@@ -17,11 +17,15 @@ public class Camera
 	private double fontHeight = 0.4; //Height of font in units IN SPACE DIMENSIONS
 	private double fontOffset = 0.1; //Offset of font from the axes IN SPACE DIMENSIONS
 	private double snapRadius = 0.4; //GRAPHICAL RADIUS of snap IN SPACE DIMENSIONS
+	private double origRadius = 1; //GRAPHICAL RADIUS of square at origin
+	
+	private Color gridColor = getColor(0xFFAAAAAA);
+	private Color coordsColor = getColor(0xFF000000);
+	private Color origColor = getColor(0xAA000000);
 	
 	private double fontSize;
 	private Font font;
-	
-	double fontWidth;
+	private double fontWidth;
 	
 	public Camera()
 	{
@@ -115,19 +119,19 @@ public class Camera
 		//Draw vertical lines
 		for (double x = (int) xLeft; x < xRight; x++)
 		{
-			bg.setColor(new Color(0xFFAAAAAA));
+			bg.setColor(gridColor);
 			drawLine(bg, x, yDown, x, yUp);
 		}
 		
 		//Draw horizontal lines
 		for (double y = (int) yDown; y < yUp; y++)
 		{
-			bg.setColor(new Color(0xFFAAAAAA));
+			bg.setColor(gridColor);
 			drawLine(bg, xLeft, y, xRight, y);
 		}
 		
 		//Draw x and y axes
-		bg.setColor(new Color(0xFF000000));
+		bg.setColor(Color.BLACK);
 		bg.setStroke(new BasicStroke(3));
 		drawLine(bg, 0, yDown, 0, yUp); //x-axis
 		drawLine(bg, xLeft, 0, xRight, 0); //y-axis
@@ -135,7 +139,7 @@ public class Camera
 		
 		//DRAW GRID COORDS
 		//NOTE: We have to use bg.scale(1.0,-1.0) because otherwise string gets drawn upside down
-		bg.setColor(new Color(0xFF000000));
+		bg.setColor(coordsColor);
 		bg.setFont(font);
 		
 		//Draw grid coords of x-axis
@@ -152,7 +156,7 @@ public class Camera
 		}
 		
 		//Draw grid coords of y-axis
-		if (0 - fontWidth - 2*fontOffset > xLeft) //If text is to the right of the left side of screen
+		if (0 - fontWidth - 2 * fontOffset > xLeft) //If text is to the right of the left side of screen
 		{
 			if (0 < xRight) //If text is to the left of the right side of screen, that is, it is visible in the screen and should be drawn as such
 				renderVerCoordsToLeftOf(0 - fontOffset, yDown, yUp, bg);
@@ -161,8 +165,24 @@ public class Camera
 		}
 		else //If text is to the left of the left side of screen
 		{
-			renderVerCoordsToRightOf(xLeft+fontOffset, yDown, yUp, bg);
+			renderVerCoordsToRightOf(xLeft + fontOffset, yDown, yUp, bg);
 		}
+		
+		//Draw a grey square at origin. If origin is outside frame, draw it just like how we are drawing the grid coordinates above
+		double xSq = -origRadius/2, ySq = -origRadius/2; //Coordinates of bottom-left point of grey square
+		if (-origRadius / 2 < xLeft)
+			xSq = xLeft;
+		else if (+origRadius / 2 > xRight)
+			xSq = xRight - origRadius;
+		
+		if (+origRadius / 2 > yUp)
+			ySq = yUp-origRadius;
+		else if (-origRadius / 2 < yDown)
+			ySq = yDown;
+		
+		bg.setColor(origColor);
+		this.fillRect(bg, xSq, ySq, origRadius, origRadius);
+		
 		
 		reset(bg);
 	}
@@ -296,5 +316,10 @@ public class Camera
 		font = font.deriveFont(at);
 		//Gets the width of the font IN SPACE UNITS
 		fontWidth = font.getStringBounds("A", new FontRenderContext(new AffineTransform(), true, true)).getWidth() / this.getPPU();
+	}
+	
+	private static Color getColor(int col)
+	{
+		return new Color((col >> 16) & 0xFF, (col >> 8) & 0xFF, (col) & 0xFF, (col >> 24) & 0xFF);
 	}
 }
