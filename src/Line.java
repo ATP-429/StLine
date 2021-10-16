@@ -1,5 +1,12 @@
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics2D;
+
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.border.Border;
 
 import Utility.Vector2i;
 
@@ -55,5 +62,24 @@ public class Line implements Component
 		if (start.equals(end))
 			return true;
 		return false;
+	}
+	
+	public JPanel getDetails()
+	{
+		JPanel details = new JPanel(new VerticalFlowLayout(VerticalFlowLayout.CENTER, VerticalFlowLayout.TOP,20,20));
+		details.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+		JLabel slopeFont = new JLabel("SLOPE = " + (float) (end.y - start.y) / (end.x - start.x));
+		slopeFont.setForeground(new Color(col));
+		slopeFont.setFont(new Font("Serif",Font.BOLD,16));
+		details.add(slopeFont);
+		JLabel strPoint = new JLabel("(x1,y1)="+"("+start.x+","+start.y+")");
+		strPoint.setForeground(new Color(col));
+		strPoint.setFont(new Font("Calibri",Font.BOLD|Font.ITALIC,14));
+		details.add(strPoint);
+		JLabel endPoint = new JLabel("(x2,y2)="+"("+end.x+","+end.y+")");
+		endPoint.setForeground(new Color(col));
+		endPoint.setFont(new Font("Calibri",Font.BOLD|Font.ITALIC,14));
+		details.add(endPoint);
+		return details;
 	}
 }

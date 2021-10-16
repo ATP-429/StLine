@@ -1,3 +1,4 @@
+import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -14,6 +15,7 @@ import java.awt.event.MouseWheelListener;
 import java.awt.image.BufferedImage;
 
 import javax.swing.JFrame;
+import javax.swing.JScrollPane;
 
 import Utility.Vector2i;
 
@@ -37,6 +39,8 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 	private Component comp;
 	
 	private MouseEvent prevMouseE;
+	
+	private Menu menu;
 	
 	private Vector2i prevSnap;
 	private Vector2i snap; //Coordinates of the point to which the mouse will snap to, in space
@@ -70,6 +74,16 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		
 		//Adds 'this' object to the frame. 'this' refers to the object that is executing this function, that is, the 'game' object we declared above in main(). 
 		frame.add(this); //Basically, it's adding the 'game' object (Which is just a canvas) to the window, so anything we draw on the canvas will now be visible on the frame
+		
+		menu = new Menu();
+		//menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
+		
+		menu.setPreferredSize(new Dimension(WIDTH / 3, HEIGHT));
+		menu.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		menu.setVisible(true);
+		menu.getVerticalScrollBar().setUnitIncrement(16);
+		
+		frame.add(menu, BorderLayout.LINE_END);
 		
 		frame.pack(); //Resizes the window so that all components inside it are at or above their preferred size. Since the preferred size of canvas is WIDTH x HEIGHT (As defined in main() function), the client area gets a size of WIDTH x HEIGHT
 		
@@ -158,6 +172,11 @@ public class Main extends Canvas implements MouseListener, MouseMotionListener, 
 		{
 			if (comp.isInvalid()) //If component that user has drawn is not valid (Eg. if line's start pos and end pos is same), remove that element
 				space.pop();
+			else
+			{
+				menu.add(comp);
+				menu.revalidate();
+			}
 			comp = null;
 		}
 		action = ACTION.IDLE;
